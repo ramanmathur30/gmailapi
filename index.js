@@ -1,6 +1,9 @@
+var express = require('express');
 const fs = require('fs');
 const readline = require('readline');
 const {google} = require('googleapis');
+
+var app = express();
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
@@ -9,6 +12,7 @@ const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 // time.
 const TOKEN_PATH = 'token.json';
 
+/*
 // Load client secrets from a local file.
 fs.readFile('credentials.json', (err, content) => {
   if (err) return console.log('Error loading client secret file:', err);
@@ -18,6 +22,9 @@ fs.readFile('credentials.json', (err, content) => {
   //authorize(JSON.parse(content), listModifyMgs);//Get modify message
   authorize(JSON.parse(content), listDeleteMgs);//Delete Message
 });
+*/
+
+
 
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
@@ -74,37 +81,72 @@ function getNewToken(oAuth2Client, callback) {
  *
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
-function listLabels(auth) {
-  const gmail = google.gmail({version: 'v1', auth});
-  gmail.users.labels.list({
-    userId: 'me',
-  }, (err, res) => {
-    if (err) return console.log('The API returned an error: ' + err);
-    const labels = res.data.labels;
-    if (labels.length) {
-      console.log('Labels:');
-      labels.forEach((label) => {
-        console.log(`- ${label.name}`);
-      });
-    } else {
-      console.log('No labels found.');
-    }
-  });
-}
 
+app.get('/api/getlabel',function(req,resp1){
+	fs.readFile('credentials.json', (err, content) => {
+        if (err) return console.log('Error loading client secret file:', err);
+        // Authorize a client with credentials, then call the Gmail API.
+        authorize(JSON.parse(content), listLabeling);//Get Label
 
-function listMgs(auth) {
-    const gmail = google.gmail({version: 'v1', auth});
-    var initialRequest = gmail.users.messages.list({
-        'userId': "me",
-        //'q': query,
-        "maxResults":10
-      }, (err, res) => {
-        if (err) return console.log('The API returned an error: ' + err);
-        console.log("res--->>>",JSON.stringify(res));
+        function listLabeling(auth) {
+            const gmail = google.gmail({version: 'v1', auth});
+            return gmail.users.labels.list({
+              userId: 'me',
+            }, (err, res) => {
+              if (err) return console.log('The API returned an error: ' + err);
+              const labels = res.data.labels;
+              if (labels.length) {
+                console.log('Labels:');
+                resp1.send(labels);
+                labels.forEach((label) => {
+                  console.log(`- ${label.name}`);
+                });
+              } else {
+                console.log('No labels found.');
+              }
+            });
+          }
       });
-      
-  }
+});
+
+app.get('/api/getmsglist',function(req,resp1){
+    fs.readFile('credentials.json', (err, content) => {
+        if (err) return console.log('Error loading client secret file:', err);
+        // Authorize a client with credentials, then call the Gmail API.
+        authorize(JSON.parse(content), listMgs);//Get Label
+        function listMgs(auth) {
+            const gmail = google.gmail({version: 'v1', auth});
+            var initialRequest = gmail.users.messages.list({
+                'userId': "me",
+                //'q': query,
+                "maxResults":10
+            }, (err, res) => {
+                if (err) return console.log('The API returned an error: ' + err);
+                //console.log("res--->>>",JSON.stringify(res));
+                resp1.send(res);
+            });
+        }
+    })
+})
+
+app.get('/api/getmsgdetail',function(req,resp1){
+    fs.readFile('credentials.json', (err, content) => {
+        if (err) return console.log('Error loading client secret file:', err);
+        // Authorize a client with credentials, then call the Gmail API.
+        authorize(JSON.parse(content), listMgs);//Get Label
+        function listMgs(auth) {
+            const gmail = google.gmail({version: 'v1', auth});
+            var request = gmail.users.messages.get({
+                'userId': "me",
+                'id': "17101e94f38b286e"
+              }, (err, res) => {
+                if (err) return console.log('The API returned an error: ' + err);
+                //console.log("res--->>>",JSON.stringify(res));
+                resp1.send(res);
+            });
+        }
+    })
+})
 
   function listModifyMgs(auth) {
     const gmail = google.gmail({version: 'v1', auth});
@@ -120,15 +162,31 @@ function listMgs(auth) {
       
   }
 
+  app.get('/api/getmsgdelete',function(req,resp1){
+    fs.readFile('credentials.json', (err, content) => {
+        if (err) return console.log('Error loading client secret file:', err);
+        // Authorize a client with credentials, then call the Gmail API.
+        authorize(JSON.parse(content), listDeleteMgs);//Get Label
+        function listDeleteMgs(auth) {
+            const gmail = google.gmail({version: 'v1', auth});
+            var request = gmail.users.messages.delete({
+                'userId': "me",
+                'id': "17101e94f38b286e"//messageId
+              }, (err, res) => {
+                if (err){
+                    resp1.send(err);
+                }else{ 
+                    resp1.send(res);
+                }
+              });
+              
+          }
+    })
+})
 
-  function listDeleteMgs(auth) {
-    const gmail = google.gmail({version: 'v1', auth});
-    var request = gmail.users.messages.delete({
-        'userId': "me",
-        'id': "171016e8c89c7190"//messageId
-      }, (err, res) => {
-        if (err) return console.log('The API returned an error: ' + err);
-        console.log("res--->>>",JSON.stringify(res));
-      });
-      
-  }
+
+  
+
+  app.listen(3000 , function () {
+	console.log ('listening to 3000');
+});
