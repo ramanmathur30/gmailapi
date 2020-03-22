@@ -148,19 +148,6 @@ app.get('/api/getmsgdetail',function(req,resp1){
     })
 })
 
-  function listModifyMgs(auth) {
-    const gmail = google.gmail({version: 'v1', auth});
-    var request = gmail.users.messages.modify({
-        'userId': "me",
-        'id':"171016e8c89c7190", //messageId,
-        'addLabelIds':labelsToAdd,
-        'removeLabelIds':labelsToRemove
-      }, (err, res) => {
-        if (err) return console.log('The API returned an error: ' + err);
-        console.log("res--->>>",JSON.stringify(res));
-      });
-      
-  }
 
   app.get('/api/getmsgdelete',function(req,resp1){
     fs.readFile('credentials.json', (err, content) => {
